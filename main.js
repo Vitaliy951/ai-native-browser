@@ -13,23 +13,19 @@ if (!fs.existsSync(gitignorePath)) {
     fs.writeFileSync(gitignorePath, "node_modules/\n");
 }
 
-// Универсальная функция запуска Ollama под разные ОС
+// Кроссплатформенный запуск Ollama в фоне
 function startOllama() {
     console.log(`Инициализация локального ИИ-процесса на платформе: ${process.platform}`);
-    
-    // В зависимости от ОС скрываем окно процесса
     const isWindows = process.platform === 'win32';
     
-    // Пытаемся вызвать команду 'ollama serve'
     ollamaProcess = spawn('ollama', ['serve'], {
-        windowsHide: isWindows, // Скрывает консоль только на Windows
+        windowsHide: isWindows,
         shell: true
     });
 
     ollamaProcess.stdout.on('data', (data) => console.log(`[Ollama]: ${data}`));
     ollamaProcess.stderr.on('data', (data) => {
         const errorText = data.toString();
-        // Игнорируем штатное предупреждение о том, что порт уже занят (Ollama уже запущена пользователем)
         if (!errorText.includes('address already in use')) {
             console.error(`[Ollama Error]: ${errorText}`);
         }
@@ -43,15 +39,18 @@ function createWindow() {
         title: "Отечественный ИИ-Браузер (Прототип MVP)",
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            webviewTag: true // Включаем поддержку безопасных веб-инъекций
         }
     });
 
+    // Загружаем интерфейс
     mainWindow.loadFile('index.html');
 
-    // Проверяем загрузку iframe и обрабатываем сбои сети
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        console.log(`[Браузер]: Ошибка загрузки стартовой страницы (${errorDescription}). Переключение в автономный режим.`);
+    // БЛОКИРОВКА КРАША ПРИ ОТСУТСТВИИ СЕТИ
+    // Перехватываем ошибку загрузки встроенного контента и предотвращаем падение приложения
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+        console.log(`[Автономный режим]: Не удалось загрузить ${validatedURL}. Приложение продолжает работу.`);
     });
 }
 
@@ -63,7 +62,7 @@ ipcMain.handle('ask-ai', async (event, prompt) => {
         const response = await fetch('http://localhost:11434/api/generate', {
             method: 'POST',
             body: JSON.stringify({
-                model: 'llama3', // Универсальная модель для тестов
+                model: 'llama3',
                 prompt: `${systemInstruction}\n\nПользователь: ${prompt}`,
                 stream: false
             }),
@@ -73,23 +72,22 @@ ipcMain.handle('ask-ai', async (event, prompt) => {
         const data = await response.json();
         return data.response;
     } catch (error) {
-        return `Ошибка подключения к локальному ИИ: Убедитесь, что Ollama запущена и модель llama3 загружена. (Технический лог: ${error.message})`;
+        return `Ошибка подключения к локальному ИИ: Убедитесь, что модель llama3 загружена в Ollama. (Лог: ${error.message})`;
     }
 });
 
 app.whenReady().then(() => {
     startOllama();
-    setTimeout(createWindow, 3000); // 3 секунды на инициализацию порта
+    setTimeout(createWindow, 2000); // 2 секунды на инициализацию
 });
 
-// Безопасное кроссплатформенное закрытие фоновых ИИ-процессов
+// Корректное закрытие процессов
 app.on('window-all-closed', () => {
     if (ollamaProcess) {
         console.log('Завершение процессов ИИ...');
         if (process.platform === 'win32') {
             exec('taskkill /f /im ollama.exe', () => app.quit());
         } else {
-            // На macOS и Linux мягко завершаем процесс и его дочерние элементы
             exec('pkill ollama', () => app.quit());
         }
     } else {
