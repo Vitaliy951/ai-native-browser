@@ -84,6 +84,7 @@ Ai-Browser-base
    ```bash
    git clone https://github.com
    cd ai-native-browser
+
    ```
 2. Установите необходимые зависимости:
    ```bash
