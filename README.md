@@ -82,7 +82,7 @@ Ai-Browser-base
 ### Порядок установки приложения:
 1. Клонируйте репозиторий с проектом:
    ```bash
-   git clone https://github.com
+   git clone https://github.com/Vitaliy951/ai-native-browser
    cd ai-native-browser
 
    ```
