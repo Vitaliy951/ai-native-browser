@@ -89,7 +89,7 @@
             height: calc(100% - 57px);
         }
 
-        /* Нативный изолированный тег Electron вместо iframe */
+        /* Изолированный нативный веб-компонент Electron */
         #web-view {
             flex: 3;
             height: 100%;
@@ -158,14 +158,13 @@
 <body>
 
     <div id="toolbar">
-        <button class="nav-btn" onclick="document.getElementById('web-view').goBack()">◀</button>
-        <button class="nav-btn" onclick="document.getElementById('web-view').goForward()">▶</button>
+        <button class="nav-btn" onclick="try { document.getElementById('web-view').goBack() } catch(e) {}">◀</button>
+        <button class="nav-btn" onclick="try { document.getElementById('web-view').goForward() } catch(e) {}">▶</button>
         <input type="text" id="address-bar" value="https://mincifry.gov.ru" />
         <button class="go-btn" onclick="navigate()">Перейти</button>
     </div>
 
     <div id="main-area">
-        <!-- Нативный тег webview обеспечивает полную изоляцию и стабильность клавиатуры -->
         <webview id="web-view" src="about:blank"></webview>
 
         <div id="sidebar">
@@ -175,7 +174,7 @@
             </div>
             
             <div id="chat-output">
-                <div class="message system">Привет! Я твой суверенный ИИ-помощник. Введите запрос и нажмите Enter.</div>
+                <div class="message system">Привет! Я твой суверенный ИИ-помощник. Введите запрос и нажмите Enter для отправки.</div>
                 <div class="typing-indicator" id="loading"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
             </div>
 
@@ -194,10 +193,12 @@
     <script>
         const { ipcRenderer } = require('electron');
 
-        // Гарантируем принудительный возврат фокуса в поле ввода ИИ при старте
-        window.onload = () => {
-            setTimeout(() => { document.getElementById('user-input').focus(); }, 500);
-        };
+        // Принудительный фокус ввода на ИИ-чат при старте приложения
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('user-input').focus();
+            }, 500);
+        });
 
         function navigate() {
             let url = document.getElementById('address-bar').value.trim();
@@ -206,18 +207,18 @@
             document.getElementById('web-view').src = url;
         }
 
-        // Железобетонный перехват Enter для адресной строки
-        document.getElementById('address-bar').ononkeydown = document.getElementById('address-bar').addEventListener('keydown', function(e) {
+        // Перехват Enter для адресной строки (ОПЕЧАТКА ИСПРАВЛЕНА)
+        document.getElementById('address-bar').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 navigate();
             }
         });
 
-        // Железобетонный перехват Enter для ИИ-ввода
+        // Перехват Enter для ИИ-ввода
         document.getElementById('user-input').addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Запрещаем перенос строки
+                e.preventDefault(); 
                 sendToAI();
             }
         });
@@ -250,7 +251,7 @@
             outputField.insertBefore(aiDiv, loadingIndicator);
             
             outputField.scrollTop = outputField.scrollHeight;
-            inputField.focus(); // Возвращаем фокус ввода в чат
+            inputField.focus(); // Возвращаем фокус в текстовое поле после ответа
         }
     </script>
 </body>
