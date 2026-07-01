@@ -207,11 +207,11 @@
             document.getElementById('web-view').src = url;
         }
 
-        // Перехват Enter для адресной строки (ОПЕЧАТКА ИСПРАВЛЕНА)
-        document.getElementById('address-bar').addEventListener('keydown', function(e) {
+        // НАДЕЖНЫЙ ПЕРЕХВАТ ENTER ДЛЯ АДРЕСНОЙ СТРОКИ
+       document.getElementById('address-bar').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault();
-                navigate();
+                e.preventDefault(); // Отменяем стандартные действия браузера
+                navigate();         // Вызываем функцию перехода на сайт
             }
         });
 
